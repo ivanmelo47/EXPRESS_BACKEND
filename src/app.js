@@ -5,6 +5,7 @@ const authRoutes = require('./routes/authRoutes');
 const cors = require('cors'); // Importa cors
 const path = require('path'); // Importa path para manejar rutas de archivos
 const rateLimit = require('express-rate-limit'); // Importa express-rate-limit
+const logger = require('./middlewares/logger'); // Importa el middleware
 
 // Crear la aplicación
 const app = express();
@@ -33,6 +34,9 @@ const limiter = rateLimit({
   max: 100, // Limita cada IP a 100 solicitudes por ventana
 });
 app.use(limiter); // Aplica el limitador a todas las rutas
+
+// Usar el middleware de logger
+app.use(logger); // Aquí se aplica el middleware
 
 // Rutas
 app.use('/api/users', userRoutes);
