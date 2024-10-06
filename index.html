@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CRUD Usuarios con Axios</title>
+  
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Vue 3 -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
+  <!-- Axios -->
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body>
+  <div id="app" class="container mt-5">
+    <h1 class="mb-4 text-center">Gestión de Usuarios</h1>
+
+    <!-- Menú de navegación para el CRUD -->
+    <ul class="nav nav-pills mb-4 justify-content-center">
+      <li class="nav-item">
+        <a class="nav-link" :class="{'active': activeMenu === 'list'}" href="#" @click="setActiveMenu('list')">Listar Usuarios</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" :class="{'active': activeMenu === 'create'}" href="#" @click="setActiveMenu('create')">Crear Usuario</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" :class="{'active': activeMenu === 'update'}" href="#" @click="setActiveMenu('update')">Actualizar Usuario</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" :class="{'active': activeMenu === 'delete'}" href="#" @click="setActiveMenu('delete')">Eliminar Usuario</a>
+      </li>
+    </ul>
+
+    <!-- Contenido dinámico basado en el menú seleccionado -->
+    <div v-if="activeMenu === 'list'">
+      <h3>Lista de Usuarios</h3>
+      <button class="btn btn-primary mb-3" @click="getUsers">Cargar Usuarios</button>
+      <ul class="list-group">
+        <li v-for="user in users" :key="user.id" class="list-group-item">
+          {{ user.name }} - {{ user.email }} - {{ user.phone }}
+        </li>
+      </ul>
+    </div>
+
+    <div v-if="activeMenu === 'create'">
+      <h3>Crear Usuario</h3>
+      <form @submit.prevent="createUser">
+        <div class="mb-3">
+          <label for="name" class="form-label">Nombre</label>
+          <input type="text" id="name" v-model="newUser.name" class="form-control" required>
+        </div>
+        <div class="mb-3">
+          <label for="email" class="form-label">Correo Electrónico</label>
+          <input type="email" id="email" v-model="newUser.email" class="form-control" required>
+        </div>
+        <div class="mb-3">
+          <label for="phone" class="form-label">Teléfono</label>
+          <input type="tel" id="phone" v-model="newUser.phone" class="form-control" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Crear Usuario</button>
+      </form>
+    </div>
+
+    <div v-if="activeMenu === 'update'">
+      <h3>Actualizar Usuario</h3>
+      <form @submit.prevent="updateUserMethod">
+        <div class="mb-3">
+          <label for="userId" class="form-label">ID del Usuario</label>
+          <input type="text" id="userId" v-model="updateUser.id" class="form-control" required>
+        </div>
+        <div class="mb-3">
+          <label for="newName" class="form-label">Nuevo Nombre</label>
+          <input type="text" id="newName" v-model="updateUser.name" class="form-control" required>
+        </div>
+        <div class="mb-3">
+          <label for="newEmail" class="form-label">Nuevo Correo Electrónico</label>
+          <input type="email" id="newEmail" v-model="updateUser.email" class="form-control" required>
+        </div>
+        <div class="mb-3">
+          <label for="newPhone" class="form-label">Nuevo Teléfono</label>
+          <input type="tel" id="newPhone" v-model="updateUser.phone" class="form-control" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Actualizar Usuario</button>
+      </form>
+    </div>
+
+    <div v-if="activeMenu === 'delete'">
+      <h3>Eliminar Usuario</h3>
+      <form @submit.prevent="deleteUser">
+        <div class="mb-3">
+          <label for="deleteUserId" class="form-label">ID del Usuario</label>
+          <input type="text" id="deleteUserId" v-model="deleteUserId" class="form-control" required>
+        </div>
+        <button type="submit" class="btn btn-danger">Eliminar Usuario</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Vue app -->
+  <script>
+    const app = Vue.createApp({
+      data() {
+        return {
+          activeMenu: 'list',  // Menú activo (list, create, update, delete)
+          users: [],           // Lista de usuarios
+          newUser: {           // Datos del nuevo usuario
+            name: '',
+            email: '',
+            phone: ''
+          },
+          updateUser: {        // Datos para actualizar el usuario
+            id: '',
+            name: '',
+            email: '',
+            phone: ''
+          },
+          deleteUserId: ''     // ID del usuario a eliminar
+        };
+      },
+      methods: {
+        setActiveMenu(menu) {
+          this.activeMenu = menu;
+        },
+        async getUsers() {
+          try {
+            const response = await axios.get('http://localhost:5000/api/users');
+            this.users = response.data.data;
+          } catch (error) {
+            console.error('Error al obtener usuarios:', error);
+          }
+        },
+        async createUser() {
+          try {
+            const response = await axios.post('http://localhost:5000/api/users', this.newUser);
+            alert('Usuario creado con éxito: ' + response.data.msg);
+            this.newUser = { name: '', email: '', phone: '' };  // Limpiar formulario
+          } catch (error) {
+            console.error('Error al crear usuario:', error);
+            alert('Error al crear usuario');
+          }
+        },
+        async updateUserMethod() {
+          try {
+            //return console.log(this.updateUser);
+            const response = await axios.put(`http://localhost:5000/api/users/${this.updateUser.id}`, this.updateUser);
+            alert('Usuario actualizado con éxito: ' + response.data.msg);
+            this.updateUser = { id: '', name: '', email: '', phone: '' };  // Limpiar formulario
+          } catch (error) {
+            console.error('Error al actualizar usuario:', error);
+            alert('Error al actualizar usuario');
+          }
+        },
+        async deleteUser() {
+          try {
+            const response = await axios.delete(`http://localhost:5000/api/users/${this.deleteUserId}`);
+            alert('Usuario eliminado con éxito: ' + response.data.msg);
+            this.deleteUserId = '';  // Limpiar formulario
+          } catch (error) {
+            console.error('Error al eliminar usuario:', error);
+            alert('Error al eliminar usuario');
+          }
+        }
+      }
+    });
+
+    app.mount('#app');
+  </script>
+
+  <!-- Bootstrap 5 JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
