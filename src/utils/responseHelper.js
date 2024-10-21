@@ -10,7 +10,7 @@ exports.handleSuccess = (res, data = null, msg = 'Operación exitosa', statusCod
   
   // Manejo de errores
   exports.handleError = (res, msg = 'Error en la operación', error, statusCode = 500) => {
-    console.error(error);
+    //console.error(error);
     return res.status(statusCode).json({
       validation: false,
       status: false,

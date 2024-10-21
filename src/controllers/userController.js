@@ -6,6 +6,7 @@ const { handleValidationErrors } = require("../utils/validationHelper");
 const { handleSuccess, handleError, notFoundResponse, respuestaPersonalizada } = require("../utils/responseHelper");
 const { recordExists } = require("../utils/dbHelpers");
 const path = require('path');
+const { deleteFile } = require('../utils/fileHelper'); // Importar la función deleteFile
 
 // Obtener todos los usuarios
 exports.getAllUsers = async (req, res) => {
@@ -29,7 +30,7 @@ exports.getAllUsers = async (req, res) => {
 
 // Obtener un usuario por ID
 exports.getUserById = async (req, res) => {
-  // Verificar errores de validación
+  // Verificar errores de validación de los datos de entrada
   if (handleValidationErrors(req, res)) return;
 
   const { id } = req.params;
@@ -50,7 +51,12 @@ exports.getUserById = async (req, res) => {
 // Crear un nuevo usuario
 exports.createUser = async (req, res) => {
   // Verificar errores de validación
-  if (handleValidationErrors(req, res)) return;
+  if (handleValidationErrors(req, res)){
+    if (req.file) {
+      await deleteFile(path.join(__dirname, '../uploads/', req.file.filename));
+    }
+    return;
+  };
 
   // Crear el usuario
   const { name, email, phone, password } = req.body;
@@ -58,19 +64,27 @@ exports.createUser = async (req, res) => {
   const hashedPassword = await bcrypt.hash(password, 10); // Hashea el password
 
   // Obtener la URL de la imagen
-  const imageUrl = req.file ? `/uploads/${req.file.filename}` : null; // URL relativa
+  const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
 
   try {
-    // Verificar si el email ya existe
-    const emailExists = await recordExists("users", "email", email);
+    // Verificar si el email o teléfono ya existen
+    const [emailExists, phoneExists] = await Promise.all([
+      recordExists("users", "email", email),
+      recordExists("users", "phone", phone),
+    ]);
+
     if (emailExists) {
-      return respuestaPersonalizada(res, "El email ya está en uso", false, false, null, 409);
-    } else {
-      // Verificar si el telefono ya existe
-      const phoneExists = await recordExists("users", "phone", phone);
-      if (phoneExists) {
-        return respuestaPersonalizada(res, "El telefono ya está en uso", false, false, null, 409);
+      if (req.file) {
+        await deleteFile(path.join(__dirname, '../uploads/', req.file.filename));
       }
+      return respuestaPersonalizada(res, "El email ya está en uso", false, false, null, 409);
+    }
+
+    if (phoneExists) {
+      if (req.file) {
+        await deleteFile(path.join(__dirname, '../uploads/', req.file.filename));
+      }
+      return respuestaPersonalizada(res, "El telefono ya está en uso", false, false, null, 409);
     }
 
     const [userId] = await db("users").insert({
@@ -79,7 +93,7 @@ exports.createUser = async (req, res) => {
       email,
       phone,
       password: hashedPassword,
-      url_img: imageUrl, // Guarda la URL de la imagen
+      url_img: imageUrl
     });
 
     // Respuesta exitosa

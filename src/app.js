@@ -22,8 +22,12 @@ app.use(cors({
 }));
 
 // Configurar body-parser para procesar JSON con un límite mayor
-app.use(bodyParser.json({ limit: '10mb' })); // Ajusta el límite a lo que necesites
-app.use(bodyParser.urlencoded({ limit: '10mb', extended: true })); // Ajusta el límite a lo que necesites
+app.use(bodyParser.json({ limit: '10mb' })); 
+app.use(bodyParser.urlencoded({ limit: '10mb', extended: true })); 
+
+// Configurar body-parser para procesar JSON y form-data
+/* app.use(express.json({ limit: '10mb' })); // Procesa JSON
+app.use(express.urlencoded({ limit: '10mb', extended: true })); */
 
 // Middleware para servir archivos estáticos
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
